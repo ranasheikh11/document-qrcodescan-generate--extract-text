@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:scanner/core/theme/app_theme.dart';
@@ -10,8 +11,7 @@ import 'package:scanner/features/scanner/presentation/bloc/scanner_state.dart';
 import 'package:scanner/features/scanner/presentation/pages/ocr_edit_page.dart';
 import 'package:scanner/features/scanner/presentation/pages/qr_scanner_page.dart';
 import 'package:scanner/features/scanner/presentation/pages/qr_generator_page.dart';
-import 'package:scanner/features/scanner/presentation/widgets/glass_container.dart';
-import 'package:intl/intl.dart';
+import 'package:scanner/features/scanner/presentation/widgets/home_widgets.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,293 +21,162 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String _filter = 'All';
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
-      body: Stack(
-        children: [
-          // Background Gradient Blob for visual interest
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primaryIndigo.withOpacity(0.08),
-              ),
-            ).animate().scale(duration: 2.seconds, curve: Curves.easeInOut).fadeIn(),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 24),
-                  _buildHeader(context),
-                  const SizedBox(height: 32),
-                  _buildSearchBar(context),
-                  const SizedBox(height: 40),
-                  _buildGridMenu(context),
-                  const SizedBox(height: 48),
-                  _buildActivityHeader(context),
-                  const SizedBox(height: 16),
-                  _buildFilterChips(context),
-                  const SizedBox(height: 24),
-                  _buildRecentActivity(context),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ],
+      backgroundColor: AppTheme.backgroundLight,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAppBar(),
+            _buildHeroSection(),
+            _buildQuickActions(),
+            _buildRecentActivityHeader(),
+            _buildRecentActivityList(),
+            const SizedBox(height: 120), // Padding for floating nav
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
-    return GlassContainer(
-      borderRadius: BorderRadius.circular(20),
-      opacity: 0.03,
-      blur: 15,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search scans...',
-          hintStyle: TextStyle(color: Colors.grey.withOpacity(0.6)),
-          border: InputBorder.none,
-          icon: Icon(Icons.search_rounded, color: AppTheme.primaryIndigo.withOpacity(0.7)),
-        ),
-      ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
-  }
-
-  Widget _buildActivityHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Recent Activity',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+  Widget _buildAppBar() {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            const Icon(Icons.dashboard_rounded, color: AppTheme.primaryNavy, size: 28),
+            const SizedBox(width: 16),
+            Text(
+              'ArchivePro',
+              style: GoogleFonts.manrope(
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
+                color: AppTheme.primaryNavy,
                 letterSpacing: -0.5,
               ),
-        ),
-        TextButton(
-          onPressed: () {},
-          child: const Text('See All', style: TextStyle(color: AppTheme.primaryIndigo)),
-        ),
-      ],
-    ).animate().fadeIn(delay: 800.ms);
-  }
-
-  Widget _buildFilterChips(BuildContext context) {
-    final chips = ['All', 'DOCS', 'QR'];
-    return Row(
-      children: chips.map((label) {
-        final isSelected = _filter == label;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
-            onTap: () => setState(() => _filter = label),
-            child: AnimatedContainer(
-              duration: 300.ms,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryIndigo : Colors.transparent,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.2),
-                ),
+                color: AppTheme.surfaceLow,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[600],
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    ).animate().fadeIn(delay: 900.ms);
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Hello, Pro',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -1,
-                      ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryEmerald.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'PRO',
-                    style: TextStyle(
-                      color: AppTheme.secondaryEmerald,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Your digital workspace is ready',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[500],
-                  ),
+              child: const Icon(Icons.notifications_none_rounded, color: AppTheme.primaryNavy),
             ),
           ],
         ),
-        _buildProfileAvatar(context),
-      ],
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.1);
-  }
-
-  Widget _buildProfileAvatar(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [AppTheme.primaryIndigo, AppTheme.primaryIndigo.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: AppTheme.premiumShadow,
-      ),
-      child: const Center(
-        child: Icon(Icons.person_rounded, color: Colors.white, size: 28),
       ),
     );
   }
 
-  Widget _buildGridMenu(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      children: [
-        _buildMenuCard(
-          context,
-          'Scan Doc',
-          Icons.camera_alt_outlined,
-          AppTheme.primaryIndigo,
-          () => _pickImage(context, ImageSource.camera),
+  Widget _buildHeroSection() {
+    return Container(
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppTheme.primaryNavy, Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        _buildMenuCard(
-          context,
-          'Pick Image',
-          Icons.photo_library_outlined,
-          AppTheme.secondaryEmerald,
-          () => _pickImage(context, ImageSource.gallery),
-        ),
-        _buildMenuCard(
-          context,
-          'QR Scanner',
-          Icons.qr_code_scanner_rounded,
-          Colors.orange,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const QRScannerPage()),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: AppTheme.premiumShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.tertiaryAmber.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'PREMIUM ARCHIVIST',
+              style: GoogleFonts.inter(
+                color: AppTheme.tertiaryAmber,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
+            ),
           ),
-        ),
-        _buildMenuCard(
-          context,
-          'Create QR',
-          Icons.add_box_outlined,
-          Colors.purple,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const QRGeneratorPage()),
+          const SizedBox(height: 20),
+          Text(
+            'Institutional Grade\nTranscription.',
+            style: GoogleFonts.manrope(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.1,
+              letterSpacing: -1.0,
+            ),
           ),
-        ),
-      ],
-    ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.95, 0.95));
-  }
-
-  Widget _buildMenuCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: AppTheme.premiumShadow,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Stack(
+          const SizedBox(height: 16),
+          Text(
+            'Securely scan and organize your critical documents with AI-powered precision.',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.6),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 32),
+          Row(
             children: [
-              Positioned(
-                top: -20,
-                right: -20,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color.withOpacity(0.05),
-                  ),
+              _buildModernButton(
+                'NEW SCAN',
+                Icons.document_scanner_rounded,
+                Colors.white,
+                AppTheme.primaryNavy,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QRScannerPage()),
                 ),
               ),
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(icon, color: color, size: 30),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.2,
-                          ),
-                    ),
-                  ],
+              const SizedBox(width: 12),
+              _buildModernButton(
+                'IMPORT',
+                Icons.file_upload_outlined,
+                Colors.white.withOpacity(0.1),
+                Colors.white,
+                () => _pickImage(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildModernButton(String label, IconData icon, Color bg, Color text, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: text),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  color: text,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -317,91 +186,273 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRecentActivity(BuildContext context) {
+  Widget _buildQuickActions() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Quick Capabilities',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                  color: AppTheme.primaryNavy,
+                ),
+              ),
+              const Icon(Icons.more_horiz_rounded, color: AppTheme.primaryNavy),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: PremiumMenuCard(
+                  title: 'OCR Tool',
+                  subtitle: 'Text extraction',
+                  icon: Icons.auto_fix_high_rounded,
+                  color: const Color(0xFF6366F1),
+                  onTap: () => _pickImage(context, ImageSource.gallery),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: PremiumMenuCard(
+                  title: 'QR Code',
+                  subtitle: 'Generator',
+                  icon: Icons.qr_code_2_rounded,
+                  color: const Color(0xFFF59E0B),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const QRGeneratorPage()),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildVaultStatus(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVaultStatus() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLowest,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppTheme.premiumShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryNavy.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.security_rounded, color: AppTheme.primaryNavy),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Vault 7-Day Retention',
+                  style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: AppTheme.primaryNavy,
+                  ),
+                ),
+                Text(
+                  'Auto-pruning active for security.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'ACTIVE',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF10B981),
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivityHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Recent Documents',
+            style: GoogleFonts.manrope(
+              fontWeight: FontWeight.w800,
+              fontSize: 20,
+              color: AppTheme.primaryNavy,
+            ),
+          ),
+          Text(
+            'VIEW ALL',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.primaryNavy,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivityList() {
     return BlocBuilder<ScannerBloc, ScannerState>(
       builder: (context, state) {
         if (state is HistoryLoadedState && state.history.isNotEmpty) {
-          final filteredHistory = state.history.where((item) {
-            if (_filter == 'All') return true;
-            if (_filter == 'DOCS') return item.type == 'OCR';
-            if (_filter == 'QR') return item.type == 'QR';
-            return true;
-          }).toList();
-
-          if (filteredHistory.isEmpty) {
-            return _buildEmptyState(context, 'No results for this filter');
-          }
-
-          return ListView.separated(
+          return ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: filteredHistory.length > 5 ? 5 : filteredHistory.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: state.history.length > 3 ? 3 : state.history.length,
             itemBuilder: (context, index) {
-              final item = filteredHistory[index];
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: AppTheme.premiumShadow,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: item.type == 'QR'
-                            ? Colors.orange.withOpacity(0.1)
-                            : AppTheme.primaryIndigo.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        item.type == 'QR' ? Icons.qr_code_2_rounded : Icons.description_outlined,
-                        color: item.type == 'QR' ? Colors.orange : AppTheme.primaryIndigo,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.text,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            DateFormat('dd MMM, yyyy • HH:mm').format(item.dateTime),
-                            style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded, color: Colors.grey[300]),
-                  ],
-                ),
-              ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.1);
+              final item = state.history[index];
+              return _buildActivityItem(item);
             },
           );
         }
-        return _buildEmptyState(context, 'No recent activity');
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'No recent activities. Start scanning to see them here.',
+            style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+          ),
+        );
       },
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text(message, style: TextStyle(color: Colors.grey[500])),
+  Widget _buildActivityItem(dynamic item) {
+    final isOcr = item.type == 'OCR';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLowest,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
-      ).animate().fadeIn(),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLow,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isOcr ? Icons.description : Icons.qr_code_2,
+              color: AppTheme.primaryNavy,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.fileName ?? 'Unnamed Document',
+                  style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: AppTheme.primaryNavy,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: isOcr ? Colors.green : AppTheme.primaryNavy,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isOcr ? 'OCR' : 'QR GEN',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'OCT 24, 11:30 AM',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD5E0F7),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(
+              'Verified'.toUpperCase(),
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF586377),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
+        ],
+      ),
     );
   }
 
@@ -414,28 +465,12 @@ class _HomePageState extends State<HomePage> {
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Document',
-            toolbarColor: AppTheme.primaryIndigo,
+            toolbarColor: AppTheme.primaryNavy,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
-            aspectRatioPresets: [
-              CropAspectRatioPreset.original,
-              CropAspectRatioPreset.square,
-              CropAspectRatioPreset.ratio3x2,
-              CropAspectRatioPreset.ratio4x3,
-              CropAspectRatioPreset.ratio16x9
-            ],
           ),
-          IOSUiSettings(
-            title: 'Crop Document',
-            aspectRatioPresets: [
-              CropAspectRatioPreset.original,
-              CropAspectRatioPreset.square,
-              CropAspectRatioPreset.ratio3x2,
-              CropAspectRatioPreset.ratio4x3,
-              CropAspectRatioPreset.ratio16x9
-            ],
-          ),
+          IOSUiSettings(title: 'Crop Document'),
         ],
       );
 

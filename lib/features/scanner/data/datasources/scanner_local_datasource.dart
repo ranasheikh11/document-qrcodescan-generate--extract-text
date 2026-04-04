@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:hive/hive.dart';
 import '../models/scan_result_model.dart';
 
 abstract class ScannerLocalDataSource {
@@ -10,10 +11,31 @@ abstract class ScannerLocalDataSource {
 
 class ScannerLocalDataSourceImpl implements ScannerLocalDataSource {
   final TextRecognizer _textRecognizer = TextRecognizer();
-  
-  // For simplicity, we'll use a local list for history in this session
-  // In a real app, use SharedPreferences or a Database
-  final List<ScanResultModel> _history = [];
+  final Box<ScanResultModel> scanBox;
+
+  ScannerLocalDataSourceImpl({required this.scanBox}) {
+    _pruneExpiredData();
+  }
+
+  /// Removes data older than 7 days from the Hive box.
+  void _pruneExpiredData() {
+    final now = DateTime.now();
+    final keysToDelete = <dynamic>[];
+
+    for (var key in scanBox.keys) {
+      final item = scanBox.get(key);
+      if (item != null) {
+        final difference = now.difference(item.dateTime).inDays;
+        if (difference >= 7) {
+          keysToDelete.add(key);
+        }
+      }
+    }
+
+    if (keysToDelete.isNotEmpty) {
+      scanBox.deleteAll(keysToDelete);
+    }
+  }
 
   @override
   Future<String> getTextFromImage(File image) async {
@@ -24,12 +46,17 @@ class ScannerLocalDataSourceImpl implements ScannerLocalDataSource {
 
   @override
   Future<void> saveScanResult(ScanResultModel result) async {
-    _history.insert(0, result);
-    if (_history.length > 10) _history.removeLast();
+    // Check for pruning before saving as well
+    _pruneExpiredData();
+    await scanBox.add(result);
   }
 
   @override
   Future<List<ScanResultModel>> getRecentHistory() async {
-    return _history;
+    _pruneExpiredData();
+    // Return items sorted by date (newest first)
+    final history = scanBox.values.toList();
+    history.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return history;
   }
 }

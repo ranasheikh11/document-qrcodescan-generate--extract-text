@@ -3,31 +3,42 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:scanner/core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
-import 'package:scanner/features/scanner/presentation/widgets/glass_container.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class QRGeneratorPage extends StatefulWidget {
-  const QRGeneratorPage({super.key});
+  final String? initialText;
+  const QRGeneratorPage({super.key, this.initialText});
 
   @override
   State<QRGeneratorPage> createState() => _QRGeneratorPageState();
 }
 
 class _QRGeneratorPageState extends State<QRGeneratorPage> {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialText);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create QR'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded),
-            onPressed: () {},
+        title: Text(
+          'Create QR Code',
+          style: GoogleFonts.manrope(
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+            color: AppTheme.primaryNavy,
           ),
-        ],
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppTheme.primaryNavy),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -48,26 +59,32 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Input Content',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: -0.5),
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: AppTheme.primaryNavy,
+          ),
         ),
         const SizedBox(height: 12),
-        GlassContainer(
-          borderRadius: BorderRadius.circular(24),
-          opacity: 0.03,
-          blur: 10,
+        Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceLow,
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: TextField(
             controller: _controller,
             onChanged: (val) => setState(() {}),
             maxLines: 3,
             minLines: 1,
-            decoration: const InputDecoration(
+            style: GoogleFonts.inter(fontSize: 15, color: AppTheme.primaryNavy),
+            decoration: InputDecoration(
               border: InputBorder.none,
               hintText: 'Enter text or URL to encode...',
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
-              prefixIcon: Icon(Icons.link_rounded, color: AppTheme.primaryIndigo),
+              hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 15),
+              prefixIcon: const Icon(Icons.link_rounded, color: AppTheme.primaryNavy),
             ),
           ),
         ),
@@ -76,12 +93,11 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
   }
 
   Widget _buildQRCard(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Container(
-        width: 300,
+        width: 320,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: AppTheme.surfaceLowest,
           borderRadius: BorderRadius.circular(32),
           boxShadow: AppTheme.premiumShadow,
         ),
@@ -91,17 +107,17 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
               padding: const EdgeInsets.symmetric(vertical: 20),
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: AppTheme.primaryIndigo,
+                color: AppTheme.primaryNavy,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'DIGITAL QR CARD',
-                  style: TextStyle(
+                  'DIGITAL QR ARCHIVE',
+                  style: GoogleFonts.inter(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 2,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                 ),
               ),
@@ -111,8 +127,8 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppTheme.surfaceLow, width: 2),
               ),
               child: QrImageView(
                 data: _controller.text.isEmpty ? " " : _controller.text,
@@ -121,11 +137,11 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
                 backgroundColor: Colors.white,
                 eyeStyle: const QrEyeStyle(
                   eyeShape: QrEyeShape.circle,
-                  color: Color(0xFF1E293B),
+                  color: AppTheme.primaryNavy,
                 ),
                 dataModuleStyle: const QrDataModuleStyle(
                   dataModuleShape: QrDataModuleShape.circle,
-                  color: AppTheme.primaryIndigo,
+                  color: AppTheme.primaryNavy,
                 ),
               ),
             ),
@@ -136,7 +152,11 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
                 _controller.text.isEmpty ? 'Waiting for input...' : _controller.text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                style: GoogleFonts.inter(
+                  color: AppTheme.onSurfaceVariant,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -157,7 +177,15 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
             onTap: () {
               Clipboard.setData(ClipboardData(text: _controller.text));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard'), behavior: SnackBarBehavior.floating),
+                SnackBar(
+                  content: Text(
+                    'Copied to clipboard',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: AppTheme.primaryNavy,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               );
             },
           ),
@@ -182,29 +210,35 @@ class _QRGeneratorPageState extends State<QRGeneratorPage> {
   Widget _buildPrimaryButton(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.primaryIndigo,
+        backgroundColor: AppTheme.primaryNavy,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
       ),
       onPressed: onTap,
       icon: Icon(icon, size: 20),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+      label: Text(
+        label.toUpperCase(),
+        style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+      ),
     );
   }
 
   Widget _buildSecondaryButton(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-        foregroundColor: Colors.grey[700],
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        side: const BorderSide(color: AppTheme.surfaceLow, width: 2),
+        foregroundColor: AppTheme.primaryNavy,
       ),
       onPressed: onTap,
       icon: Icon(icon, size: 20),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+      label: Text(
+        label.toUpperCase(),
+        style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+      ),
     );
   }
 }

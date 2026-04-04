@@ -1,5 +1,6 @@
+import 'package:hive_flutter/hive_flutter.dart';
+import 'features/scanner/data/models/scan_result_model.dart';
 import 'package:get_it/get_it.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'features/scanner/data/datasources/scanner_local_datasource.dart';
 import 'features/scanner/data/repositories/scanner_repository_impl.dart';
@@ -12,6 +13,11 @@ import 'features/scanner/presentation/bloc/scanner_bloc.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  //! External
+  await Hive.initFlutter();
+  Hive.registerAdapter(ScanResultModelAdapter());
+  final scanBox = await Hive.openBox<ScanResultModel>('scans');
+  sl.registerLazySingleton(() => scanBox);
   //! Features - Scanner
   // Bloc
   sl.registerFactory(
@@ -36,10 +42,9 @@ Future<void> init() async {
 
   // Data sources
   sl.registerLazySingleton<ScannerLocalDataSource>(
-    () => ScannerLocalDataSourceImpl(),
+    () => ScannerLocalDataSourceImpl(scanBox: sl()),
   );
 
   //! External
   sl.registerLazySingleton(() => ImagePicker());
-  sl.registerLazySingleton(() => TextRecognizer(script: TextRecognitionScript.latin));
 }

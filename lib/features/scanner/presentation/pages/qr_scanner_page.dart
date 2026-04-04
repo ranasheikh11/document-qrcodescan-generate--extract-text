@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:scanner/core/theme/app_theme.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:scanner/features/scanner/presentation/bloc/scanner_bloc.dart';
-import 'package:scanner/features/scanner/presentation/bloc/scanner_event.dart';
-import 'package:scanner/features/scanner/presentation/widgets/glass_container.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:scanner/core/theme/app_theme.dart';
 
 class QRScannerPage extends StatefulWidget {
   const QRScannerPage({super.key});
@@ -15,25 +13,16 @@ class QRScannerPage extends StatefulWidget {
   State<QRScannerPage> createState() => _QRScannerPageState();
 }
 
-class _QRScannerPageState extends State<QRScannerPage> with SingleTickerProviderStateMixin {
-  late MobileScannerController controller;
-  late AnimationController _animationController;
-  bool isScanned = false;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = MobileScannerController();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
+class _QRScannerPageState extends State<QRScannerPage> {
+  final MobileScannerController controller = MobileScannerController(
+    formats: [BarcodeFormat.all],
+  );
+  String _mode = 'DOCUMENT';
+  bool _isFlashOn = false;
 
   @override
   void dispose() {
     controller.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
@@ -46,220 +35,285 @@ class _QRScannerPageState extends State<QRScannerPage> with SingleTickerProvider
           MobileScanner(
             controller: controller,
             onDetect: (capture) {
-              if (isScanned) return;
-              final List<Barcode> barcodes = capture.barcodes;
-              if (barcodes.isNotEmpty) {
-                final String code = barcodes.first.rawValue ?? "Unknown";
-                setState(() => isScanned = true);
-                HapticFeedback.mediumImpact();
-                _showResult(context, code);
+              if (_mode == 'QR CODE') {
+                final List<Barcode> barcodes = capture.barcodes;
+                if (barcodes.isNotEmpty) {
+                  HapticFeedback.mediumImpact();
+                  Navigator.pop(context, barcodes.first.rawValue);
+                }
               }
             },
           ),
-          _buildOverlay(context),
-          _buildControls(context),
-          _buildAppBar(context),
+          _buildCameraOverlay(),
+          _buildTopHeader(),
+          _buildBottomControls(),
         ],
       ),
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildTopHeader() {
     return Positioned(
-      top: 40,
-      left: 10,
-      child: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
-      ),
-    );
-  }
-
-  Widget _buildOverlay(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(child: Container(color: Colors.black.withOpacity(0.5))),
-        Row(
-          children: [
-            Expanded(child: Container(color: Colors.black.withOpacity(0.5))),
-            Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.transparent),
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
               ),
-              child: Stack(
+              Column(
                 children: [
-                  _buildCornerBorder(),
-                  AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (context, child) {
-                      return Positioned(
-                        top: _animationController.value * 240,
-                        left: 10,
-                        right: 10,
-                        child: Container(
-                          height: 2,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryIndigo.withOpacity(0.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryIndigo.withOpacity(0.5),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
+                   Text(
+                    _mode == 'DOCUMENT' ? 'DOCUMENT SCAN' : (_mode == 'QR CODE' ? 'QR CODE SCAN' : 'ID CARD SCAN'),
+                    style: GoogleFonts.manrope(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                      ).animate(onPlay: (c) => c.repeat()).scale(duration: 1.seconds, begin: const Offset(0.7, 0.7), end: const Offset(1.3, 1.3)).fadeIn(),
+                      const SizedBox(width: 8),
+                      Text(
+                        'PRECISION ACTIVE',
+                        style: GoogleFonts.inter(
+                          color: Colors.white70,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-            Expanded(child: Container(color: Colors.black.withOpacity(0.5))),
-          ],
-        ),
-        Expanded(
-          child: Container(
-            color: Colors.black.withOpacity(0.5),
-            alignment: Alignment.topCenter,
-            padding: const EdgeInsets.only(top: 20),
-            child: const Text('Scan QR or Barcode', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 24),
+              ),
+            ],
           ),
         ),
-      ],
-    ).animate().fadeIn(duration: 800.ms);
-  }
-
-  Widget _buildCornerBorder() {
-    return CustomPaint(
-      size: const Size(250, 250),
-      painter: CornerPainter(),
+      ),
     );
   }
 
-  Widget _buildControls(BuildContext context) {
+  Widget _buildCameraOverlay() {
+    final size = MediaQuery.of(context).size;
+    final viewWidth = _mode == 'ID CARD' ? size.width * 0.85 : 280.0;
+    final viewHeight = _mode == 'ID CARD' ? 220.0 : (_mode == 'DOCUMENT' ? 400.0 : 280.0);
+
+    return Center(
+      child: Stack(
+        children: [
+          AnimatedContainer(
+            duration: 400.ms,
+            curve: Curves.easeInOutCubic,
+            width: viewWidth,
+            height: viewHeight,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+              borderRadius: BorderRadius.circular(32),
+            ),
+          ),
+          ...[
+            Positioned(top: 0, left: 0, child: _Corner(quarter: 0)),
+            Positioned(top: 0, right: 0, child: _Corner(quarter: 1)),
+            Positioned(bottom: 0, left: 0, child: _Corner(quarter: 3)),
+            Positioned(bottom: 0, right: 0, child: _Corner(quarter: 2)),
+          ],
+        ],
+      ),
+    ).animate().fadeIn(duration: 600.ms);
+  }
+
+  Widget _buildBottomControls() {
     return Positioned(
-      bottom: 80,
+      bottom: 0,
       left: 0,
       right: 0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildFAB(
-            onPressed: () => controller.toggleTorch(),
-            icon: Icons.flashlight_on_rounded,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 40, 24, 60),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [Colors.black.withOpacity(0.9), Colors.transparent],
           ),
-          _buildFAB(
-            onPressed: () => controller.switchCamera(),
-            icon: Icons.flip_camera_ios_rounded,
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildCircularButton(Icons.photo_library_outlined, 'IMPORT', () async {
+                  final ImagePicker picker = ImagePicker();
+                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                  if (image != null && mounted) {
+                    Navigator.pop(context, image.path);
+                  }
+                }),
+                _buildShutterButton(),
+                _buildCircularButton(_isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded, 'TORCH', () {
+                  setState(() => _isFlashOn = !_isFlashOn);
+                  controller.toggleTorch();
+                }),
+              ],
+            ),
+            const SizedBox(height: 48),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildModeTab('DOCUMENT'),
+                  _buildModeTab('ID CARD'),
+                  _buildModeTab('QR CODE'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeTab(String mode) {
+    final isSelected = _mode == mode;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setState(() => _mode = mode);
+      },
+      child: AnimatedContainer(
+        duration: 300.ms,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          mode,
+          style: GoogleFonts.inter(
+            color: isSelected ? AppTheme.primaryNavy : Colors.white54,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircularButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: Colors.white70,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.5,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFAB({required VoidCallback onPressed, required IconData icon}) {
+  Widget _buildShutterButton() {
     return GestureDetector(
-      onTap: onPressed,
-      child: GlassContainer(
-        width: 64,
-        height: 64,
-        borderRadius: BorderRadius.circular(24),
-        blur: 15,
-        opacity: 0.1,
-        child: Center(
-          child: Icon(icon, color: Colors.white, size: 28),
-        ),
-      ),
-    );
-  }
-
-  void _showResult(BuildContext context, String code) {
-    context.read<ScannerBloc>().add(SaveScanEvent(text: code, type: 'QR'));
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
-            const SizedBox(height: 24),
-            const Icon(Icons.check_circle_rounded, color: AppTheme.secondaryEmerald, size: 48),
-            const SizedBox(height: 16),
-            const Text('Scan Successful', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-              child: SelectableText(code, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+      onTap: () {
+        HapticFeedback.heavyImpact();
+      },
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.3), width: 3),
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryIndigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Done'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: code));
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied to clipboard')));
-                  },
-                  icon: const Icon(Icons.copy_rounded, color: AppTheme.primaryIndigo),
-                ),
-              ],
+          ),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: Center(
+              child: Icon(
+                _mode == 'QR CODE' ? Icons.qr_code_scanner_rounded : Icons.camera_alt_rounded,
+                color: AppTheme.primaryNavy,
+                size: 32,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class CornerPainter extends CustomPainter {
+class _Corner extends StatelessWidget {
+  final int quarter;
+  const _Corner({required this.quarter});
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.primaryIndigo
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    const cornerLength = 30.0;
-
-    // Top Left
-    canvas.drawLine(const Offset(0, 0), const Offset(cornerLength, 0), paint);
-    canvas.drawLine(const Offset(0, 0), const Offset(0, cornerLength), paint);
-
-    // Top Right
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - cornerLength, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, cornerLength), paint);
-
-    // Bottom Left
-    canvas.drawLine(Offset(0, size.height), Offset(cornerLength, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - cornerLength), paint);
-
-    // Bottom Right
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - cornerLength, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - cornerLength), paint);
+  Widget build(BuildContext context) {
+    const double cornerSize = 40.0;
+    const double thickness = 6.0;
+    
+    return Container(
+      width: cornerSize,
+      height: cornerSize,
+      decoration: BoxDecoration(
+        border: Border(
+          top: quarter == 0 || quarter == 1 ? const BorderSide(color: Colors.white, width: thickness) : BorderSide.none,
+          bottom: quarter == 2 || quarter == 3 ? const BorderSide(color: Colors.white, width: thickness) : BorderSide.none,
+          left: quarter == 0 || quarter == 3 ? const BorderSide(color: Colors.white, width: thickness) : BorderSide.none,
+          right: quarter == 1 || quarter == 2 ? const BorderSide(color: Colors.white, width: thickness) : BorderSide.none,
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: quarter == 0 ? const Radius.circular(20) : Radius.zero,
+          topRight: quarter == 1 ? const Radius.circular(20) : Radius.zero,
+          bottomRight: quarter == 2 ? const Radius.circular(20) : Radius.zero,
+          bottomLeft: quarter == 3 ? const Radius.circular(20) : Radius.zero,
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
