@@ -4,7 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'injection_container.dart' as di;
 import 'features/scanner/presentation/bloc/scanner_bloc.dart';
 import 'features/scanner/presentation/bloc/scanner_event.dart';
-import 'features/scanner/presentation/pages/home_page.dart';
+import 'features/scanner/presentation/pages/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        home: const HomePage(),
+        home: const MainScreen(),
       ),
     );
   }
